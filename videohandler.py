@@ -14,3 +14,6 @@ class videoImage(QMediaPlayer):
         # Default, Goals: add parameters to change video capture
         self.setMedia(QMediaContent(QUrl("venv/aiko.mp4")))
 
+
+    def clearVideo(self):
+        self.setMedia(QMediaContent())

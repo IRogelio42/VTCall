@@ -17,18 +17,18 @@ class Overlay(QWidget):
         self.detection_rect = mss.mss().monitors[1]
         self.video = videoHandle()
         self.image = QVideoWidget()
+        self.image.setFullScreen(False)
         flags = 0
         flags |= Qt.WindowType.WindowTransparentForInput
         flags |= Qt.WindowStaysOnTopHint
         flags |= Qt.FramelessWindowHint
         flags |= Qt.Tool
         self.setWindowFlags(flags)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        #self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.setup_elements()
         self.update_geometry()
         self.show()
-        self.get_video()
 
     def setup_elements(self):
         # Line Corners of Overlay with a 1 pixel Solid Magenta line
@@ -41,26 +41,38 @@ class Overlay(QWidget):
 
     def update_geometry(self):
         self.setGeometry(
-            self.detection_rect["left"],
-            self.detection_rect["top"],
-            self.detection_rect["width"],
-            self.detection_rect["height"]
+            int(self.detection_rect["left"]/2),
+            int(self.detection_rect["top"]/2),
+            int(self.detection_rect["width"]/2),
+            int(self.detection_rect["height"]/2)
         )
         # Set Corners, aka, Covers Entire Width/Height of screen
         self.corners.setGeometry(
             0,
             0,
-            self.detection_rect["width"],  # Detects ASpect Ratio from Monitor
-            self.detection_rect["height"]
+            int(self.detection_rect["width"]/2),  # Detects ASpect Ratio from Monitor
+            int(self.detection_rect["height"]/2)
         )
+        self.resize(int(self.detection_rect["width"]/2), int(self.detection_rect["height"]/2))
 
     def get_video(self):
+        self.setAttribute(Qt.WA_TranslucentBackground, on=False)
+        self.setStyleSheet("QWidget {background-color: white}")
+        self.repaint()
         self.video.getVideo()
         self.video.setVideoOutput(self.image)
         self.layout.addWidget(self.image)
         self.image.show()
-        self.image.setFullScreen(True)
+
+        #self.image.setFullScreen(True)
         self.video.play()
+
+    def close_video(self):
+        self.video.clearVideo()
+        self.setAttribute(Qt.WA_TranslucentBackground, on=True)
+        self.image.setFullScreen(False)
+        self.repaint()
+
 
 
 class GUI(QMainWindow):
@@ -131,6 +143,14 @@ class MainTab(QWidget):
         scroll_area.setFrameShape(QFrame.NoFrame)
         scroll_area.setWidget(scroll_widget)
         scroll_area.setWidgetResizable(True)
+
+        self.video_button = QPushButton("Start Video")
+        self.video_button.clicked.connect(overlay.get_video)
+        self.inner_layout.addWidget(self.video_button)
+
+        self.close_video = QPushButton("Close Video")
+        self.close_video.clicked.connect(overlay.close_video)
+        self.inner_layout.addWidget(self.close_video)
 
         outer_layout = QGridLayout()
         outer_layout.setContentsMargins(0, 0, 0, 0)
